@@ -9,9 +9,19 @@ function checkNotificationPermission() {
     Notification.requestPermission().then(permission => {
         if (permission === "granted") {
             console.log("Permesso notifiche concesso");
+            // Cambia lo stato del pulsante
+            const btn = document.getElementById('enableNotificationsButton');
+            btn.textContent = "Notifiche Abilitate";
+            btn.disabled = true; // Disabilita il pulsante per evitare ulteriori clic
+
+            // Registra il Service Worker
+            registerServiceWorker();
         } else {
             alert("Non puoi ricevere notifiche push se non dai il permesso.");
         }
+    }).catch(error => {
+        console.log("Errore durante la richiesta dei permessi per le notifiche:", error);
+        alert("C'è stato un errore durante la richiesta dei permessi per le notifiche.");
     });
 }
 
@@ -68,10 +78,9 @@ function scheduleNotification(text, time) {
 // Aggiungi l'evento click al pulsante per abilitare le notifiche
 document.getElementById('enableNotificationsButton').addEventListener('click', () => {
     checkNotificationPermission();
-    registerServiceWorker();
 });
 
 window.onload = () => {
-    // Registrazione del Service Worker al caricamento della pagina
+    // Registra il Service Worker al caricamento della pagina
     registerServiceWorker();
 };
