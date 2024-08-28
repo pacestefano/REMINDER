@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promemoria PWA</title>
+    <link rel="manifest" href="/manifest.json">
+    <script>
+        // Verifica se il browser supporta le notifiche
+        function checkNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("Il tuo browser non supporta le notifiche.");
+                return;
+            }
+
+            // Richiedi il permesso di inviare notifiche
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("Permesso notifiche concesso");
+                } else {
+                    alert("Non puoi ricevere notifiche push se non dai il permesso.");
+                }
+            });
+        }
+
+        // Registrazione del Service Worker per le notifiche push
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registrato con successo:', registration);
+                })
+                .catch(error => {
+                    console.log('Registrazione del Service Worker fallita:', error);
+                });
+            }
+        }
+
+        // Salvataggio del promemoria e dell'orario selezionato
+        function saveReminder() {
+            const reminderText = document.getElementById('reminderText').value;
+            const reminderTime = document.getElementById('reminderTime').value;
+
+            if (reminderText && reminderTime) {
+                const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+                reminders.push({ text: reminderText, time: reminderTime });
+                localStorage.setItem('reminders', JSON.stringify(reminders));
+
+                alert("Promemoria salvato!");
+
+                // Impostare un timeout per inviare la notifica al tempo corretto
+                scheduleNotification(reminderText, reminderTime);
+            } else {
+                alert("Assicurati di inserire il testo del promemoria e selezionare un orario.");
+            }
+        }
+
+        // Pianificare una notifica per il promemoria
+        function scheduleNotification(text, time) {
+            const now = new Date();
+            const [hours, minutes] = time.split(":");
+            const reminderDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+
+            const timeUntilNotification = reminderDate.getTime() - now.getTime();
+
+            setTimeout(() => {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification("Promemoria", {
+                        body: text,
+                        icon: "/icons/icon-192x192.png"
+                    });
+                });
+            }, timeUntilNotification);
+        }
+
+        window.onload = () => {
+            checkNotificationPermission();
+            registerServiceWorker();
+        };
+    </script>
+</head>
+<body>
+    <h1>Promemoria Giornalieri</h1>
+    <form onsubmit="saveReminder(); return false;">
+        <label for="reminderText">Testo del Promemoria:</label>
+        <input type="text" id="reminderText" required><br><br>
+        
+        <label for="reminderTime">Orario del Promemoria:</label>
+        <input type="time" id="reminderTime" required><br><br>
+        
+        <button type="submit">Salva Promemoria</button>
+    </form>
+</body>
+</html>
